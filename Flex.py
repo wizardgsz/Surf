@@ -24,7 +24,7 @@
 
 #This states the metadata for the plugin
 bl_info = {
-    "name": "Array Sketch 0.75",
+    "name": "Flex",
     "author": "Crocadillian, Eclectiel, patmo141, chichiri",
     "version": (0,75),
     "blender": (2, 7, 0),
