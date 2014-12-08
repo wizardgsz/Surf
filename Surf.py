@@ -20,11 +20,11 @@
 #//////////////////////////////// - AUTHORS YO - ///////////////////////////
 #Original Author - Eclectiel
 #Previous Updators - patmo141, chichiri
-#Blender 2.7x Update - Crocadillian
+#Blender 2.7x Maintainer - Crocadillian
 
 #This states the metadata for the plugin
 bl_info = {
-    "name": "Flex",
+    "name": "Surf",
     "author": "Crocadillian, Eclectiel, patmo141, chichiri",
     "version": (0,75),
     "blender": (2, 7, 0),
@@ -32,7 +32,7 @@ bl_info = {
     "location": "3D View > Object Mode > Tools > Grease Pencil",
     #"description": "Easily sketch meshes with grease pencil and metaballs",
     #In case i add a few quick tools for quickly applying mesh data to splines, I wanted to expand the description :3
-    "description": "Easily sketch and generate meshes with the grease pencil",
+    "description": "Sketch and generate meshes with the grease pencil",
     "warning": "Beta",
     "wiki_url": "",
     "category": "Object"}
