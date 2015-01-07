@@ -1492,7 +1492,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
                 
                 print("DRAW STROKE: Found active object, creating curve")
                 
-                if bpy.context.scene.grease_pencil.layers.active.active_frame is None or bpy.context.scene.grease_pencil is None:
+                if bpy.context.gpencil_data is None:
                     self.report({'WARNING'}, 
                     'No grease pencil data found or curve selected.  Start drawing!')
                     continue_process = False
@@ -1526,7 +1526,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
                         'Array Sketch Selected.  Select a normal curve to begin')
                         return {'FINISHED'}
         
-                elif bpy.context.active_object.grease_pencil.layers.active.active_frame is None or bpy.context.active_object.grease_pencil is None:
+                elif bpy.context.gpencil_data is None:
                     self.report({'WARNING'}, 
                     'No grease pencil data found or curve selected.  Start drawing!')
                     continue_process = False
@@ -1534,10 +1534,10 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
                 
                 else:
                     # Grab the Gpencil data from the selected and active object
-                    gpencil_target = bpy.context.active_object.grease_pencil    
+                    gpencil_target = bpy.context.gpencil_data 
             
                     bpy.ops.object.select_all(action='DESELECT')        # Deselect everything
-                    bpy.context.scene.grease_pencil = gpencil_target    # Seitch GPencil Data
+                    bpy.context.scene.grease_pencil = gpencil_target    # Switch GPencil Data
                     bpy.ops.gpencil.convert(type='CURVE')     # Convert the active grease pencil
                     bpy.ops.gpencil.active_frame_delete()               # Clear GPencil Data
                     
