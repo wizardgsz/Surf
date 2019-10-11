@@ -21,13 +21,17 @@
 #Original Author - Eclectiel
 #Previous Updators - patmo141, chichiri
 #Blender 2.7x Maintainer - Crocadillian
+#https://www.graphicsandprogramming.net/ita/tutorial/blender/il-grease-pencil/grease-pencil-in-blender-2-8-introduzione
+#http://blenderaddonlist.blogspot.com/2014/04/addon-array-sketch-270-alpha.html
+#https://github.com/Takanu/Surf
+
 
 #This states the metadata for the plugin
 bl_info = {
     "name": "Surf",
-    "author": "Crocadillian, Eclectiel, patmo141, chichiri",
-    "version": (0,75),
-    "blender": (2, 7, 0),
+    "author": "Crocadillian, Eclectiel, patmo141, chichiri, wizardgsz",
+    "version": (0,77),
+    "blender": (2, 80, 0),
     "api": 39347,
     "location": "3D View > Object Mode > Tools > Grease Pencil",
     #"description": "Easily sketch meshes with grease pencil and metaballs",
@@ -40,7 +44,7 @@ bl_info = {
 
 
 #This imports various items from the Python API for use in the script
-import bpy, bmesh, time
+import bpy, bmesh, time, os, traceback
 from math import *
 from bpy.props import IntProperty, BoolProperty, FloatProperty, EnumProperty
 
@@ -86,7 +90,7 @@ def Update_StrokeSize(self, context):
              
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
                 
     return None
 
@@ -117,7 +121,7 @@ def Update_StrokeDensity(self, context):
             
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
                 
     return None
@@ -164,12 +168,12 @@ def Update_Normalise(self, context):
             
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
         
     return {"FINISHED"}
     
 def Update_XMirror(self, context):
-    
+
     if bpy.context.scene.ASKETCH_live_update is not False:
 
         # Create an array to store all found objects
@@ -190,7 +194,7 @@ def Update_XMirror(self, context):
                     
                     bpy.ops.object.modifier_add(type='MIRROR')
                     
-                    stroke.modifiers['Mirror'].use_X = True
+                    stroke.modifiers['Mirror'].use_axis[0] = True
                     
                 else:
                     FocusObject(stroke.name)
@@ -205,9 +209,9 @@ def Update_XMirror(self, context):
                     for mod in stroke.modifiers:
                         if mod.type not in mod_types:
                             mod.show_viewport = False
-            
-                    me = stroke.to_mesh(scene, False, 'PREVIEW')
-            
+
+                    me = stroke.to_mesh()
+
                     for mod, active in zip(stroke.modifiers, mod_active):
                         if mod.type in mod_types:
                             stroke.modifiers.remove(mod)
@@ -215,7 +219,7 @@ def Update_XMirror(self, context):
                             mod.show_viewport = active
         
                     # Note: this only swaps the object's data, but doesn't remove the original mesh
-                    stroke.data = me
+                    #stroke.data = me
                     
         
         # Find all the Stroke Objects in the scene
@@ -253,7 +257,7 @@ def Update_MergeElements(self, context):
             
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None
                 
@@ -294,7 +298,7 @@ def Update_CurveObject(self, context):
                         if mod.type not in mod_types:
                             mod.show_viewport = False
             
-                    me = stroke.to_mesh(scene, False, 'PREVIEW')
+                    me = stroke.to_mesh()
             
                     for mod, active in zip(stroke.modifiers, mod_active):
                         if mod.type in mod_types:
@@ -303,7 +307,7 @@ def Update_CurveObject(self, context):
                             mod.show_viewport = active
         
                     # Note: this only swaps the object's data, but doesn't remove the original mesh
-                    stroke.data = me
+                    #stroke.data = me
                     
                             
                 else:
@@ -324,8 +328,8 @@ def Update_CurveObject(self, context):
                     
                     stroke_curve_name = stroke.name.replace(".SKO", ".SKC")
                     FocusObject(stroke_curve_name)
-                    
-                    stroke.modifiers["Array"].curve = bpy.context.scene.objects.active
+
+                    stroke.modifiers["Array"].curve = bpy.context.active_object
                     
                     # Push the modifier to the top of the stack
                     FocusObject(stroke.name)
@@ -342,7 +346,7 @@ def Update_CurveObject(self, context):
             
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None
     
@@ -378,7 +382,7 @@ def Update_LockTransform(self, context):
             
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None     
     
@@ -428,7 +432,7 @@ def Update_TwistMode(self,context):
             
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None     
 
@@ -471,7 +475,7 @@ def Update_TwistTilt(self, context):
              
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None     
 
@@ -492,6 +496,10 @@ def Update_NormaliseTilt(self, context):
                 
                 # Add it in the array so it can be re-selected later
                 strokes_to_select.append(stroke)
+
+                # Change the internal values of the object
+                stroke.ASKETCH_tilt = 0
+                stroke.ASKETCH_tilt_old = 0
 
                 stroke_curve_name = stroke.name.replace(".SKO", ".SKC")
                 FocusObject(stroke_curve_name)
@@ -518,7 +526,7 @@ def Update_NormaliseTilt(self, context):
              
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None 
 
@@ -553,7 +561,7 @@ def Update_ObjectOrigin(self, context):
              
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None 
 
@@ -592,7 +600,7 @@ def Update_OriginUpdate(self, context):
              
         for strokeActive in strokes_to_make_active:
             bpy.ops.object.select_pattern(pattern=strokeActive.name)
-            bpy.context.scene.objects.active = strokeActive
+            bpy.context.view_layer.objects.active = strokeActive
             
     return None 
                     
@@ -632,9 +640,9 @@ bpy.types.Scene.SCENE_stroke_central_size  = bpy.props.FloatProperty(
 bpy.types.Object.ASKETCH_twist_mode = bpy.props.EnumProperty(
     name="Twist Mode",
     items=(
-       ('1', 'Tangent', 'Use the tangent to calculate twist.'),
-       ('2', 'Minimum', 'Use the least twist over the entire curve'),
        ('3', 'Z-Up', 'Use the Z-Axis to calculate the curve twist at each point'),
+       ('2', 'Minimum', 'Use the least twist over the entire curve'),
+       ('1', 'Tangent', 'Use the tangent to calculate twist.'),
     ),
     update = Update_TwistMode)
     
@@ -803,7 +811,7 @@ class View3DPanel():
 #Generates the UI panel inside the 3D view
 class VIEW3D_PT_tools_ASKETCH_create(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_context = "objectmode"
     bl_label = "Create Sketch"
     bl_category = "Grease Pencil"
@@ -863,7 +871,7 @@ class VIEW3D_PT_tools_ASKETCH_create(bpy.types.Panel):
 #Generates the UI panel inside the 3D view
 class VIEW3D_PT_tools_ASKETCH_edit_settings(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_context = "objectmode"
     bl_label = "Sketch Settings"
     bl_category = "Grease Pencil"
@@ -881,7 +889,7 @@ class VIEW3D_PT_tools_ASKETCH_edit_settings(bpy.types.Panel):
         
         row_edit.separator()
         
-        if context.scene.ASKETCH_live_update is True and context.active_object.name.find(".SKO") != -1:
+        if context.scene.ASKETCH_live_update is True and context.active_object is not None and context.active_object.name.find(".SKO") != -1:
             row_edit.prop(ob, "ASKETCH_stroke_size", slider = True)
             row_edit.prop(ob, "ASKETCH_stroke_element_offset", slider = True)
             row_edit.prop(ob, "ASKETCH_stroke_central_size", slider = True)
@@ -892,7 +900,7 @@ class VIEW3D_PT_tools_ASKETCH_edit_settings(bpy.types.Panel):
             col_origin = layout.row(align=True)
             col_origin.alignment = 'EXPAND'
             col_origin.prop(ob, "ASKETCH_origin_point", text = "", icon = "CURSOR")
-            col_origin.prop(scn, "SCENE_origin_update", text="", toggle = True, icon = "ALIGN", icon_only = True)
+            col_origin.prop(scn, "SCENE_origin_update", text="", toggle = True, icon = "ALIGN_MIDDLE", icon_only = True)
             
             col_origin.separator()
          
@@ -919,7 +927,7 @@ class VIEW3D_PT_tools_ASKETCH_edit_settings(bpy.types.Panel):
             #row_align.prop(ob, 'ASKETCH_smooth', slider=True)   
             
             row_align = col_align.row(align=True)
-            row_align.prop(ob, "ASKETCH_twist_mode", text = "", icon = "MAN_ROT")
+            row_align.prop(ob, "ASKETCH_twist_mode", text = "", icon = "ALIGN_MIDDLE")
             row_align.operator("object.asketch_normalise_tilt", text="Normalise Tilt")   
             
             
@@ -935,7 +943,7 @@ class VIEW3D_PT_tools_ASKETCH_edit_settings(bpy.types.Panel):
             col_origin = layout.row(align=True)
             col_origin.alignment = 'EXPAND'
             col_origin.prop(scn, "SCENE_origin_point", text = "", icon = "CURSOR")
-            col_origin.prop(scn, "SCENE_origin_update", text="", toggle = True, icon = "ALIGN", icon_only = True)
+            col_origin.prop(scn, "SCENE_origin_update", text="", toggle = True, icon = "ALIGN_MIDDLE", icon_only = True)
         
             col_origin.separator()
          
@@ -957,7 +965,7 @@ class VIEW3D_PT_tools_ASKETCH_edit_settings(bpy.types.Panel):
 # Generates the UI panel inside the 3D view
 class VIEW3D_PT_tools_ASKETCH_Convert(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_context = "objectmode"
     bl_label = "Convert Sketch"
     bl_category = "Grease Pencil"
@@ -998,7 +1006,7 @@ def DuplicateObject(target, targetLocation):
     
     #### Select and make target active
     bpy.ops.object.select_all(action='DESELECT')  
-    bpy.context.scene.objects.active = bpy.data.objects[target.name]
+    bpy.context.view_layer.objects.active = bpy.data.objects[target.name]
     bpy.ops.object.select_pattern(pattern=target.name)
     
     # Duplicate the object
@@ -1013,13 +1021,13 @@ def FocusObject(targetName):
     
     #### Select and make target active
     bpy.ops.object.select_all(action='DESELECT')  
-    bpy.context.scene.objects.active = bpy.data.objects[targetName]
+    bpy.context.view_layer.objects.active = bpy.data.objects[targetName]
     bpy.ops.object.select_pattern(pattern=targetName) 
     
 
 class VIEW3D_PT_tools_ASKETCH_editmode(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_context = "curve_edit"
     bl_label = "Arrays Sketching"
     bl_category = "Grease Pencil" 
@@ -1091,11 +1099,22 @@ class GPencil_Clear_Data(bpy.types.Operator):
     #    return context.active_object is not None
 
     def execute(self, context):
-        if not context.scene.grease_pencil == None:
-            context.scene.grease_pencil.clear()
-        for obj in context.scene.objects:
-            if not context.scene.objects[obj.name].grease_pencil == None:
-                context.scene.objects[obj.name].grease_pencil.clear() 
+        # TODO: verify it
+        try:
+            if not context.scene.grease_pencil == None:
+                context.scene.grease_pencil.clear()
+            for obj in context.scene.collection.objects:
+                if not context.scene.collection.objects[obj.name].grease_pencil == None:
+                    context.scene.collection.objects[obj.name].grease_pencil.clear()
+            # Old code:
+            #for obj in context.scene.objects:
+            #    if not context.scene.objects[obj.name].grease_pencil == None:
+            #        context.scene.objects[obj.name].grease_pencil.clear() 
+        except:
+            traceback.print_exc()
+            if context.active_object is not None:
+                print("Object:", context.active_object)
+            pass
         return {'FINISHED'}
     
     
@@ -1322,7 +1341,7 @@ def ASKETCH_SetSceneOrigin(curve, enum, active_object_name, context):
             cursor_loc = bpy.data.scenes[bpy.context.scene.name].cursor_location
             previous_cursor_loc = [cursor_loc[0], cursor_loc[1], cursor_loc[2]]
         
-            bpy.data.scenes[bpy.context.scene.name].cursor_location = bpy.context.scene.objects[active_object_name].location
+            bpy.data.scenes[bpy.context.scene.name].cursor_location = bpy.context.scene.collection.objects[active_object_name].location
             bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
             
             bpy.data.scenes[bpy.context.scene.name].cursor_location = previous_cursor_loc
@@ -1509,7 +1528,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
             elif selection_count >= 1:           
                         
                 print("DRAW STROKE: Found selections and active object, creating curve")
-        
+
                 if bpy.context.active_object.type == 'CURVE':
                     stroke_obj_name = bpy.context.active_object.name
         
@@ -1551,7 +1570,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
         # The curve is now selected but not active.  Were gonna make it active!
         for obj in bpy.context.selected_objects:
             obj.name = "ASKETCH Curve"
-            bpy.context.scene.objects.active = obj
+            context.view_layer.objects.active = obj
             
         # Keep a location of the curve object
         curve_obj = bpy.context.object
@@ -1581,8 +1600,8 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
   
         #here i updated to to .show_handles and .show_normal_face
         # Hides the handles and other details that are unnecessary for this plugin
-        bpy.data.curves[curve_data.name].show_handles = False
-        bpy.data.curves[curve_data.name].show_normal_face = False
+        #bpy.data.curves[curve_data.name].show_handles = False
+        #bpy.data.curves[curve_data.name].show_normal_face = False
         bpy.data.curves[curve_data.name].use_path = True
 
         #I added .use_deform_bounds = True becuase it is false by default and that was causing me great trouble
@@ -1629,7 +1648,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
         # Select the object by name and change the location
         #if self.main_object is not None:
         #    bpy.ops.object.select_pattern(pattern=stroke_curve_obj.name)
-        #    bpy.context.scene.objects.active = bpy.context.scene.objects[stroke_curve_obj.name]
+        #    bpy.context.view_layer.objects.active = bpy.context.collection.scene.collection.objects[stroke_curve_obj.name]
             
         #    bpy.data.scenes[bpy.context.scene.name].cursor_location = self.main_object.location
         #   bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
@@ -1639,7 +1658,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
         #If no object is selected, place the origin point where the cursor is.
         #else:
         #    bpy.ops.object.select_pattern(pattern=stroke_curve_obj.name)
-        #    bpy.context.scene.objects.active = bpy.context.scene.objects[stroke_curve_obj.name]
+        #    bpy.context.view_layer.objects.active = bpy.context.scene.collection.objects[stroke_curve_obj.name]
         #    
         #    bpy.data.scenes[bpy.context.scene.name].cursor_location = cursor_loc
         #    bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
@@ -1739,7 +1758,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
         ## Set main object as active.
         if self.main_object is not None:
             bpy.ops.object.select_pattern(pattern=self.main_object.name)
-            bpy.context.scene.objects.active = self.main_object
+            bpy.context.view_layer.objects.active = self.main_object
             
         # Set the curve mesh as the selected and active object
         FocusObject(stroke_brush_obj.name)
@@ -1787,6 +1806,7 @@ class ASKETCH_StrokeDraw(bpy.types.Operator):
         # and stops the code from commencing any further
         
         if bpy.data.objects.get(bpy.context.scene.ASKETCH_brush_object) is not None:
+            print("DEBUG",bpy.context.scene.ASKETCH_brush_object)
             self.brush_object = bpy.context.scene.objects[bpy.context.scene.ASKETCH_brush_object]
 
         else:
@@ -1877,9 +1897,10 @@ class ASKETCH_Stroke_Editmode(bpy.types.Operator):
         if (stroke_obj_name.find(".SKO") != -1):
             name_to_query = bpy.context.object.name.replace(".SKO", ".SKC")
             
+            print("DEBUG", name_to_query)
             if bpy.context.scene.objects[name_to_query]:
                 bpy.ops.object.select_pattern(pattern=name_to_query)
-                bpy.context.scene.objects.active = bpy.context.scene.objects[name_to_query]
+                bpy.context.view_layer.objects.active = bpy.context.scene.objects[name_to_query]
                 bpy.ops.object.editmode_toggle()
                 
         return {"FINISHED"}
@@ -1936,9 +1957,9 @@ class ASKETCH_Stroke_EditmodeExit(bpy.types.Operator):
         #main_object_name = splitted_name[0]
         #main_object_name = bpy.context.object.parent.name
         
-        #if bpy.context.scene.objects[main_object_name]:
+        #if bpy.context.scene.collection.objects[main_object_name]:
         #    bpy.ops.object.select_pattern(pattern=main_object_name)
-        #    bpy.context.scene.objects.active = bpy.context.scene.objects[main_object_name]
+        #    bpy.context.view_layer.objects.active = bpy.context.scene.collection.objects[main_object_name]
     
     
     def invoke (self, context, event):
@@ -1965,7 +1986,7 @@ class ASKETCH_Stroke_EditmodeToggle(bpy.types.Operator):
                 FocusObject(deformer_curve_name)
                 
                 #bpy.ops.object.select_pattern(pattern=deformer_curve_name)
-                #bpy.context.scene.objects.active = bpy.context.scene.objects[deformer_curve_name]
+                #bpy.context.view_layer.objects.active = bpy.context.scene.collection.objects[deformer_curve_name]
                 
                 bpy.ops.object.editmode_toggle()
                 
@@ -1985,7 +2006,7 @@ class ASKETCH_Stroke_EditmodeToggle(bpy.types.Operator):
                 FocusObject(main_object_name)
                 
                 #bpy.ops.object.select_pattern(pattern=main_object_name)
-                #bpy.context.scene.objects.active = bpy.context.scene.objects[main_object_name]
+                #bpy.context.view_layer.objects.active = bpy.context.scene.collection.objects[main_object_name]
             
     
     def invoke (self, context, event):
@@ -2002,6 +2023,7 @@ class ASKETCH_SetBrushObject(bpy.types.Operator):
     bl_label = "Array Sketch Set Brush Object"
     
     def execute(self, context):
+        print("ASKETCH_SetBrushObject:", bpy.context.active_object.name)
         bpy.context.scene.ASKETCH_brush_object = bpy.context.active_object.name
         
         
@@ -2017,7 +2039,9 @@ class ASKETCH_SetStartCap(bpy.types.Operator):
     bl_label = "Array Sketch Set Start Cap"
     
     def execute(self, context):
+        print("ASKETCH_SetStartCap:", bpy.context.active_object.name)
         bpy.context.scene.ASKETCH_start_cap = bpy.context.active_object.name
+        dump(bpy.context.active_object)
         
         
     def invoke (self, context, event):
@@ -2033,6 +2057,7 @@ class ASKETCH_SetEndCap(bpy.types.Operator):
     bl_label = "Array Sketch Set End Cap"
     
     def execute(self, context):
+        print("ASKETCH_SetEndCap:", bpy.context.active_object.name)
         bpy.context.scene.ASKETCH_end_cap = bpy.context.active_object.name
         
         
@@ -2134,7 +2159,7 @@ class ASKETCH_DeleteStrokes(bpy.types.Operator):
             
             bpy.ops.object.select_pattern(pattern=stroke_curve_name)
             bpy.ops.object.select_pattern(pattern=stroke_object_name, extend=True)
-            bpy.context.scene.objects.active = bpy.data.objects[stroke_object_name]
+            bpy.context.view_layer.objects.active = bpy.data.objects[stroke_object_name]
             bpy.ops.object.delete()
             
     
@@ -2153,6 +2178,10 @@ class ASKETCH_DeleteStrokes(bpy.types.Operator):
         
         print("Objects in Delete Queue:")
         print(len(strokes_to_delete))
+
+        # Theres a potential bug here, keep an eye out.
+        splitted_name = strokes_to_delete[0].name.split(".SKO")
+        main_object_name = splitted_name[0]
         
         for stroke in strokes_to_delete:
             print("Deleting Stroke:")
@@ -2162,13 +2191,9 @@ class ASKETCH_DeleteStrokes(bpy.types.Operator):
             
             self.delete_stroke(stroke)
         
-        # Theres a potential bug here, keep an eye out.
-        splitted_name = strokes_to_delete[0].name.split(".SKO")
-        main_object_name = splitted_name[0]
-        
         if main_object_name in bpy.data.objects:
             bpy.ops.object.select_pattern(pattern=main_object_name)
-            bpy.context.scene.objects.active = bpy.data.objects[main_object_name]
+            bpy.context.view_layer.objects.active = bpy.data.objects[main_object_name]
         
         return {"FINISHED"}
         
@@ -2193,7 +2218,7 @@ class ASKETCH_StrokeSmoothSize(bpy.types.Operator):
         self.execute(context)
         
         return {"FINISHED"}
-    
+
     
 #--------------- Strokes to Meshes-----------------------------------
 # Convert strokes to meshes.
@@ -2227,7 +2252,7 @@ class ASKETCH_StrokesToMeshes(bpy.types.Operator):
         for stroke in strokes_to_convert:
             print("Converting Stroke:")
             print(stroke.name)
-            
+
             #Just select the curve now
             FocusObject(stroke.name)
             
@@ -2238,28 +2263,28 @@ class ASKETCH_StrokesToMeshes(bpy.types.Operator):
             for mod in stroke.modifiers:
                 if mod.type not in mod_types:
                     mod.show_viewport = False
-            
-            me = stroke.to_mesh(scene, True, 'PREVIEW')
+
+            me = bpy.ops.object.convert(target='MESH')
             
             for mod, active in zip(stroke.modifiers, mod_active):
                 if mod.type in mod_types:
                    stroke.modifiers.remove(mod)
                 else:
                     mod.show_viewport = active
-        
+
             # Note: this only swaps the object's data, but doesn't remove the original mesh
-            stroke.data = me
+            #stroke.data = me
             
             # Now find and delete the corresponding curve
             stroke_curve_name = stroke.name.replace(".SKO", ".SKC")
             FocusObject(stroke_curve_name)
             bpy.ops.object.delete()
-                
+
             # Rename the curve to remove it from being considered an Object Sketch
             FocusObject(stroke.name)
             stroke.name = "ASKETCH Object"
-            
         
+
         
         return {"FINISHED"}
     
@@ -2306,16 +2331,16 @@ class ASKETCH_StrokesToMetaballs(bpy.types.Operator):
             bpy.data.objects[baked_mesh_name].hide = False
             
             bpy.ops.object.select_pattern(pattern=baked_mesh_name)
-            bpy.context.scene.objects.active = bpy.data.objects[baked_mesh_name]
+            bpy.context.view_layer.objects.active = bpy.data.objects[baked_mesh_name]
             
             bpy.ops.object.delete()
             
             bpy.ops.object.select_pattern(pattern=self.main_object.name)
-            bpy.context.scene.objects.active = bpy.data.objects[self.main_object.name]
+            bpy.context.view_layer.objects.active = bpy.data.objects[self.main_object.name]
         
         
         bpy.ops.object.select_pattern(pattern=self.main_object.name)
-        bpy.context.scene.objects.active = self.main_object
+        bpy.context.view_layer.objects.active = self.main_object
         
         
         #### Get all curves that will be converted to metaballs, and duplicate and mirror the ones that should be mirrored.
@@ -2325,11 +2350,11 @@ class ASKETCH_StrokesToMetaballs(bpy.types.Operator):
                 mirrored_curve = False
                 stroke_brush_name = obj.name.replace(".SKC", ".SKO")
                 for mod in bpy.data.objects[stroke_brush_name].modifiers:
-                    if mod.type == "MIRROR" and mod.use_x == True:
+                    if mod.type == "MIRROR" and mod.use_axis[0] == True:
                         mirrored_curve = True
                                     
                 bpy.ops.object.select_pattern(pattern=obj.name)
-                bpy.context.scene.objects.active = bpy.data.objects[obj.name]
+                bpy.context.view_layer.objects.active = bpy.data.objects[obj.name]
                 
                 bpy.ops.object.duplicate_move()
                 bpy.ops.object.editmode_toggle()
@@ -2360,7 +2385,7 @@ class ASKETCH_StrokesToMetaballs(bpy.types.Operator):
         all_mballs = []
         for curve_obj in all_strokes_curves:
             bpy.ops.object.select_pattern(pattern = curve_obj.name)
-            bpy.context.scene.objects.active = bpy.data.objects[curve_obj.name]
+            bpy.context.view_layer.objects.active = bpy.data.objects[curve_obj.name]
             
             pts = bpy.data.objects[curve_obj.name].data.splines[0].bezier_points
             
@@ -2420,7 +2445,7 @@ class ASKETCH_StrokesToMetaballs(bpy.types.Operator):
         
         
         bpy.ops.object.select_pattern(pattern= self.main_object.name)
-        bpy.context.scene.objects.active = self.main_object
+        bpy.context.view_layer.objects.active = self.main_object
     
     def invoke (self, context, event):
         self.main_object = bpy.context.object
@@ -2464,7 +2489,7 @@ class ASKETCH_MetaballsRename(bpy.types.Operator):
         
         
         bpy.ops.object.select_pattern(pattern= self.main_object.name)
-        bpy.context.scene.objects.active = self.main_object
+        bpy.context.view_layer.objects.active = self.main_object
         
     
     def invoke (self, context, event):
@@ -2500,7 +2525,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
             print("STAGE 1 of 4: Converting to Mesh...")
             start_time = time.time()
             bpy.ops.object.select_pattern(pattern= self.metaballs_object.name)
-            bpy.context.scene.objects.active = self.metaballs_object
+            bpy.context.view_layer.objects.active = self.metaballs_object
             
             bpy.ops.object.convert(target='MESH', keep_original = False)
             print("DONE... Time: " + str(time.time() - start_time) + " seconds")
@@ -2509,7 +2534,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
             
                 
             mesh_object = bpy.context.selected_objects[0]
-            bpy.context.scene.objects.active = mesh_object
+            bpy.context.view_layer.objects.active = mesh_object
             
             
             #### Setting mesh's origin.
@@ -2517,7 +2542,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
             previous_cursor_loc = [cursor_loc[0], cursor_loc[1], cursor_loc[2]]
             
             bpy.ops.object.select_pattern(pattern= mesh_object.name)
-            bpy.context.scene.objects.active = bpy.context.scene.objects[mesh_object.name]
+            bpy.context.view_layer.objects.active = bpy.context.scene.collection.objects[mesh_object.name]
             
             bpy.data.scenes[bpy.context.scene.name].cursor_location = self.main_object.location
             bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
@@ -2535,14 +2560,14 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
             for obj in bpy.data.objects:
                 if obj.name.find(self.main_object.name + ".SKMB") != -1:
                     bpy.ops.object.select_pattern(pattern= obj.name)
-                    bpy.context.scene.objects.active = obj
+                    bpy.context.view_layer.objects.active = obj
                     bpy.ops.object.delete()
             
             #### Delete all temporal curves.
             for obj in bpy.data.objects:
                 if obj.name.find("A_SK_TEMP_CURVE") != -1:
                     bpy.ops.object.select_pattern(pattern= obj.name)
-                    bpy.context.scene.objects.active = bpy.data.objects[obj.name]
+                    bpy.context.view_layer.objects.active = bpy.data.objects[obj.name]
                     bpy.ops.object.delete()
         else:
             mesh_object = bpy.data.objects[self.temp_mesh.name]
@@ -2555,7 +2580,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
         ####################################
         FocusObject(mesh_object.name)
         #bpy.ops.object.select_pattern(pattern = mesh_object.name)
-        #bpy.context.scene.objects.active = mesh_object
+        #bpy.context.view_layer.objects.active = mesh_object
         
         #### Check if the mesh has non-manifold areas.
         #ISSUE LINE HEAR!
@@ -2650,7 +2675,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
             
             #### Delete non-decimated mesh
             bpy.ops.object.select_pattern(pattern= non_decimated_object.name)
-            bpy.context.scene.objects.active = non_decimated_object
+            bpy.context.view_layer.objects.active = non_decimated_object
             bpy.ops.object.delete()
         else:
             print("WARNING: There are non-manifold areas in the resulting mesh")
@@ -2659,7 +2684,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
         
         #### Select main object.
         bpy.ops.object.select_pattern(pattern= self.main_object.name)
-        bpy.context.scene.objects.active = self.main_object
+        bpy.context.view_layer.objects.active = self.main_object
         
         
         #### Hide all strokes
@@ -2676,7 +2701,7 @@ class ASKETCH_MetaballsToMesh(bpy.types.Operator):
             self.final_mesh_name = self.main_object.name + ".SKMB"
             
             bpy.ops.object.select_pattern(pattern= self.main_object.name)
-            bpy.context.scene.objects.active = self.main_object
+            bpy.context.view_layer.objects.active = self.main_object
         else:
             self.main_object = bpy.context.object
             self.final_mesh_name = self.main_object.name + ".SKMB"
@@ -2727,7 +2752,7 @@ class ASKETCH_ToggleMeshVisibility(bpy.types.Operator):
                     bpy.data.objects[obj.name].hide = False
             
             bpy.ops.object.select_pattern(pattern= self.main_object.name)
-            bpy.context.scene.objects.active = self.main_object
+            bpy.context.view_layer.objects.active = self.main_object
             
         
     def invoke (self, context, event):
@@ -2735,7 +2760,7 @@ class ASKETCH_ToggleMeshVisibility(bpy.types.Operator):
             self.main_object = bpy.data.objects[bpy.context.object.name.split(".SKME")[0]]
             
             bpy.ops.object.select_pattern(pattern= self.main_object.name)
-            bpy.context.scene.objects.active = self.main_object
+            bpy.context.view_layer.objects.active = self.main_object
         else:
             self.main_object = bpy.context.object
             
@@ -2748,8 +2773,37 @@ class ASKETCH_ToggleMeshVisibility(bpy.types.Operator):
 
 #//////////////////////// - REGISTER/UNREGISTER DEFINITIONS - ////////////////////////
 
+classes = (
+    GPencil_Clear_Data,
+    ASKETCH_StrokeDraw,
+    ASKETCH_Stroke_Editmode,
+    ASKETCH_Stroke_EditmodeExit,
+    ASKETCH_SetBrushObject,
+    ASKETCH_SetStartCap,
+    ASKETCH_SetEndCap,
+    ASKETCH_ToggleMeshVisibility,
+    ASKETCH_normalise_options,
+    ASKETCH_normalise_tilt,
+    ASKETCH_ClearBrushObject,
+    ASKETCH_ClearStartCap,
+    ASKETCH_ClearEndCap,
+    ASKETCH_DeleteStrokes,
+    ASKETCH_StrokeSmoothSize,
+    ASKETCH_StrokesToMeshes,
+    ASKETCH_StrokesToMetaballs,
+    ASKETCH_MetaballsRename,
+    ASKETCH_MetaballsToMesh,
+    VIEW3D_PT_tools_ASKETCH_edit_settings,
+    VIEW3D_PT_tools_ASKETCH_Convert,
+    VIEW3D_PT_tools_ASKETCH_editmode,
+    VIEW3D_PT_tools_ASKETCH_create,
+)
+
+
 def register():
-    bpy.utils.register_module(__name__) 
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
 
     #kc = bpy.context.window_manager.keyconfigs.addon
     #km = kc.keymaps.new(name="3D View", space_type="VIEW_3D")
@@ -2760,7 +2814,9 @@ def register():
     
 
 def unregister():
-    bpy.utils.unregister_module(__name__) 
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
     
     #kc = bpy.context.window_manager.keyconfigs.addon
     #km = kc.keymaps["3D View"]
@@ -2785,6 +2841,27 @@ def unregister():
             
 #//////////////////////////////// - SPACEBAR SEARCH- ////////////////////////////////
 
+def dump(obj):
+    '''
+    Dump Python object methods/attributes
+    https://stackoverflow.com/questions/34439/finding-what-methods-a-python-object-has
+    '''
+    print("-"*80)
+    print("Dumping object:", obj)
+    print("-"*80)
+    for attr in dir(obj):
+        #print("obj.%s = %r" % (attr, getattr(obj, attr)))
+        if hasattr( obj, attr ):
+            print("obj.%s = %s" % (attr, getattr(obj, attr)))
+
+    #object_methods = [method_name for method_name in dir(obj)
+    #              if callable(getattr(obj, method_name))]
+    #for o in object_methods:
+    #    print(o)
+    print("-"*80)
+
+
 if __name__ == "__main__":
     register()
 
+    os.system("cls")
